@@ -1,3 +1,4 @@
 .vscode
 images/aligned
 images/raw
+*.pyc
