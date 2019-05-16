@@ -1,8 +1,12 @@
 import numpy as np
 
+GPU = 0
+
+# Best values so far for CNN: 2.0, 0, 10
+# Best values so far for HOG: 6.0, 1
+DOWNSCALE = 6.0
+UPSAMPLE = 1
 # For batch image processing
-DOWNSCALE = 3
-UPSAMPLE = 0
 BATCH_SIZE = 10
 
 # For alignment
