@@ -11,7 +11,6 @@ def getReps(alignedFaces, faceLocations, net):
         rep = net.forward(alignedFace.imgMat)
         reps.append((int((right + left)/2.0), rep))
         i += 1
-    reps = sorted(reps, key=lambda x: x[0])
     return reps
 
 def getRepString(image, net):
