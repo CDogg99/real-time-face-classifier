@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import face_recognition
 import face_recognition_models
+import openface
 import dlib
 import cv2
 import numpy as np
@@ -9,6 +10,8 @@ import os
 import time
 
 import config
+import rep
+import classifier
 from image import Image
 
 # Landmark detection
@@ -32,6 +35,18 @@ def getLandmarks(image, faceLocations):
     # Same as landmarks variable, with the actual data stored as tuples rather than points
     landmarksAsTuples =[[(p.x, p.y) for p in landmarks.parts()] for landmarks in landmarksArray]
     return landmarksAsTuples
+
+def getFaceLocationsArray(images):
+    faceLocationsArray = None
+    if(config.GPU):
+        # GPU batch processing
+        faceLocationsArray = face_recognition.batch_face_locations(images, config.UPSAMPLE, config.BATCH_SIZE)
+    else:
+        faceLocationsArray = []
+        for image in images:
+            faceLocations = face_recognition.face_locations(image, config.UPSAMPLE)
+            faceLocationsArray.append(faceLocations)
+    return faceLocationsArray
 
 """
 Read in image as BRG and change color space to RGB
@@ -106,8 +121,17 @@ def main():
     fileDir = os.path.dirname(os.path.realpath(__file__))
     imgDir = os.path.join(fileDir, "..", "images")
     rawDir = os.path.join(imgDir, "raw")
-    outputDir = os.path.join(imgDir, "aligned")
-    mkdirP(outputDir)
+    alignedDir = os.path.join(imgDir, "aligned")
+    mkdirP(alignedDir)
+    featuresDir = os.path.join(imgDir, "features")
+    mkdirP(featuresDir)
+    labelsPath = os.path.join(featuresDir, "labels.csv")
+    repsPath = os.path.join(featuresDir, "reps.csv")
+    labels = open(labelsPath, "a+")
+    representations = open(repsPath, "a+")
+
+    model = os.path.join(fileDir, "..", "models", "nn4.small2.v1.t7")
+    net = openface.TorchNeuralNet(model = model, imgDim = config.ALIGNED_IMG_SIZE, cuda = True)
 
     dirStack = []
     dirStack.append(rawDir)
@@ -130,38 +154,44 @@ def main():
                 dirStack.append(path)
             else:
                 numImages += 1
+                fileName = os.path.splitext(entry)[0]
                 img = getImage(path)
-                images.append(Image(clss, entry, img))
+                images.append(Image(clss, fileName, img))
                 resizedImages.append(resizeImage(img))
                 faceLocationsArray = None
                 if(config.GPU and len(images) == config.BATCH_SIZE):
                     # GPU batch processing
-                    faceLocationsArray = face_recognition.batch_face_locations(resizedImages, config.UPSAMPLE, config.BATCH_SIZE)
+                    faceLocationsArray = getFaceLocationsArray(resizedImages)
                 elif(not config.GPU):
-                    faceLocationsArray = []
-                    for resizedImage in resizedImages:
-                        faceLocations = face_recognition.face_locations(resizedImage, config.UPSAMPLE)
-                        faceLocationsArray.append(faceLocations)
+                    faceLocationsArray = getFaceLocationsArray(resizedImages)
                 if(faceLocationsArray is not None):
                     for faceLocations in faceLocationsArray:
                         numFaces += len(faceLocations)
                     for image in alignImages(images, faceLocationsArray):
-                        writeImage(image, outputDir)
+                        labels.write(image.clss + "\n")
+                        representations.write(rep.getRepString(image.imgMat, net) + "\n")
+                        writeImage(image, alignedDir)
                     images = []
                     resizedImages = []
         # Finish aligning remaining images for this class if GPU enabled
         if(config.GPU and len(images) > 0):
             # GPU batch processing
-            faceLocationsArray = face_recognition.batch_face_locations(resizedImages, config.UPSAMPLE, len(images))
+            faceLocationsArray = getFaceLocationsArray(resizedImages)
             for faceLocations in faceLocationsArray:
                 numFaces += len(faceLocations)
             for image in alignImages(images, faceLocationsArray):
-                writeImage(image, outputDir)
+                labels.write(image.clss + "\n")
+                representations.write(rep.getRepString(image.imgMat, net) + "\n")
+                writeImage(image, alignedDir)
             images = []
             resizedImages = []
 
+    labels.close()
+    representations.close()
+
+    classifier.train(labelsPath, repsPath, featuresDir)
+
     finishTime = time.time()
-    cv2.destroyAllWindows()
     print("Time to align images: " + str(finishTime - startTime))
     print("Total images processed: " + str(numImages))
     print("Total faces detected: " + str(numFaces))

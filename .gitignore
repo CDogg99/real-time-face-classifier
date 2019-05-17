@@ -1,4 +1,6 @@
 .vscode
 images/aligned
 images/raw
+images/features
+video
 *.pyc

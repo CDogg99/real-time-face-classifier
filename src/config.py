@@ -1,11 +1,11 @@
 import numpy as np
 
-GPU = 0
+GPU = False
 
 # Best values so far for CNN: 2.0, 0, 10
-# Best values so far for HOG: 6.0, 1
-DOWNSCALE = 6.0
-UPSAMPLE = 1
+# Best values so far for HOG: 4.0, 1
+DOWNSCALE = 2.0
+UPSAMPLE = 0
 # For batch image processing
 BATCH_SIZE = 10
 
@@ -53,3 +53,8 @@ TEMPLATE = np.float32([
 
 TPL_MIN, TPL_MAX = np.min(TEMPLATE, axis=0), np.max(TEMPLATE, axis=0)
 MINMAX_TEMPLATE = (TEMPLATE - TPL_MIN) / (TPL_MAX - TPL_MIN)
+
+# For video display
+PROCESS_NTH_FRAME = 5
+# Doesn't change the accuracy of the detection - only the replay speed
+TARGET_FRAMERATE = 30
