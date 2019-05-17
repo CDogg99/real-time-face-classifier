@@ -1,6 +1,5 @@
 .vscode
-images/aligned
-images/raw
+images
 models/features
 video
 *.pyc

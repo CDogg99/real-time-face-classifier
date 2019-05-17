@@ -16,7 +16,7 @@ from image import Image
 
 fileDir = os.path.dirname(os.path.realpath(__file__))
 model = os.path.join(fileDir, "..", "models", "nn4.small2.v1.t7")
-net = openface.TorchNeuralNet(model = model, imgDim = config.ALIGNED_IMG_SIZE, cuda = True)
+net = openface.TorchNeuralNet(model = model, imgDim = config.ALIGNED_IMG_SIZE, cuda = config.GPU_REPS)
 
 def main(args):
     cap = None

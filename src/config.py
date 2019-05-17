@@ -1,6 +1,7 @@
 import numpy as np
 
-GPU = False
+GPU_ALIGN = False
+GPU_REPS = True
 
 # Best values so far for CNN: 2.0, 0, 10
 # Best values so far for HOG: 4.0, 1

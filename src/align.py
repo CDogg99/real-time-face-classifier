@@ -38,7 +38,7 @@ def getLandmarks(image, faceLocations):
 
 def getFaceLocationsArray(images):
     faceLocationsArray = None
-    if(config.GPU):
+    if(config.GPU_ALIGN):
         # GPU batch processing
         faceLocationsArray = face_recognition.batch_face_locations(images, config.UPSAMPLE, config.BATCH_SIZE)
     else:
@@ -85,7 +85,7 @@ Write the given image to outDir
 def writeImage(image, outDir):
     outDir = os.path.join(outDir, image.clss)
     mkdirP(outDir)
-    outDir = os.path.join(outDir, os.path.splitext(image.name)[0] + ".png")
+    outDir = os.path.join(outDir, image.name + ".png")
     cv2.imwrite(outDir, cv2.cvtColor(image.imgMat, cv2.COLOR_RGB2BGR))
 
 """
@@ -124,17 +124,19 @@ def main():
     imgDir = os.path.join(fileDir, "..", "images")
     modelsDir = os.path.join(fileDir, "..", "models")
     rawDir = os.path.join(imgDir, "raw")
+    # Uncomment this an writeImage() calls if aligned images are desired
     alignedDir = os.path.join(imgDir, "aligned")
     mkdirP(alignedDir)
     featuresDir = os.path.join(modelsDir, "features")
     mkdirP(featuresDir)
     labelsPath = os.path.join(featuresDir, "labels.csv")
     repsPath = os.path.join(featuresDir, "reps.csv")
-    labels = open(labelsPath, "a+")
-    representations = open(repsPath, "a+")
+    # Use a+ to modify existing
+    labels = open(labelsPath, "w")
+    representations = open(repsPath, "w")
 
     model = os.path.join(modelsDir, "nn4.small2.v1.t7")
-    net = openface.TorchNeuralNet(model = model, imgDim = config.ALIGNED_IMG_SIZE, cuda = True)
+    net = openface.TorchNeuralNet(model = model, imgDim = config.ALIGNED_IMG_SIZE, cuda = config.GPU_REPS)
 
     dirStack = []
     dirStack.append(rawDir)
@@ -162,10 +164,7 @@ def main():
                 images.append(Image(clss, fileName, img))
                 resizedImages.append(resizeImage(img))
                 faceLocationsArray = None
-                if(config.GPU and len(images) == config.BATCH_SIZE):
-                    # GPU batch processing
-                    faceLocationsArray = getFaceLocationsArray(resizedImages)
-                elif(not config.GPU):
+                if((config.GPU_ALIGN and len(images) == config.BATCH_SIZE) or not config.GPU_ALIGN):
                     faceLocationsArray = getFaceLocationsArray(resizedImages)
                 if(faceLocationsArray is not None):
                     for (alignedFaces, faceLocations) in zip(alignImages(images, faceLocationsArray), faceLocationsArray):
@@ -177,8 +176,7 @@ def main():
                     images = []
                     resizedImages = []
         # Finish aligning remaining images for this class if GPU enabled
-        if(config.GPU and len(images) > 0):
-            # GPU batch processing
+        if(config.GPU_ALIGN and len(images) > 0):
             faceLocationsArray = getFaceLocationsArray(resizedImages)
             for (alignedFaces, faceLocations) in zip(alignImages(images, faceLocationsArray), faceLocationsArray):
                 numFaces += len(faceLocations)
