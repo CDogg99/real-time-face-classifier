@@ -11,18 +11,22 @@ import config
 from image import Image
 
 def main(args):
-    fileDir = os.path.dirname(os.path.realpath(__file__))
-    video = os.path.join(fileDir, "..", args.video)
-    if(not os.path.isfile(video)):
-        print("Video file not found")
-        quit()
-    cap = cv2.VideoCapture(video)
+    cap = None
+    if(args.video is not None):
+        fileDir = os.path.dirname(os.path.realpath(__file__))
+        video = os.path.join(fileDir, "..", args.video)
+        if(not os.path.isfile(video)):
+            print("Video file not found")
+            quit()
+        cap = cv2.VideoCapture(video)
+    else:
+        cap = cv2.VideoCapture(0)
 
     startTime = time.time()
     numFrames = 0
     numFaces = 0
     faceLocations = []
-    while(cap.isOpened()):
+    while(cap.isOpened() or args.video is not None):
         ret, frame = cap.read()
         if(not ret):
             break
@@ -53,6 +57,6 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("video", type = str, help = "Path to video")
+    parser.add_argument("--video", type = str, help = "Path to video")
     args = parser.parse_args()
     main(args)
