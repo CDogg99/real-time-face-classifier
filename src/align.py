@@ -89,15 +89,16 @@ def writeImage(image, outDir):
     cv2.imwrite(outDir, cv2.cvtColor(image.imgMat, cv2.COLOR_RGB2BGR))
 
 """
-Returns an array of images with aligned faces
+Returns an matrix of aligned faces, with each row corresponding to an image
 images - an array of image matrices
 faceLocationsArray - an array of face locations within each image
 """
 def alignImages(images, faceLocationsArray):
-    alignedImages = []
+    alignedImagesArray = []
     # Loop through each image and its face locations
     for faceLocations, image in zip(faceLocationsArray, images):
         landmarksArray = getLandmarks(image.imgMat, faceLocations)
+        alignedImages = []
         # Loop through the array of landmarks for faces in this image
         curFace = 0
         for landmarks in landmarksArray:
@@ -115,22 +116,24 @@ def alignImages(images, faceLocationsArray):
 
             alignedImages.append(Image(image.clss, name, thumbnail))
             curFace += 1
-    return alignedImages
+        alignedImagesArray.append(alignedImages)
+    return alignedImagesArray
 
 def main():
     fileDir = os.path.dirname(os.path.realpath(__file__))
     imgDir = os.path.join(fileDir, "..", "images")
+    modelsDir = os.path.join(fileDir, "..", "models")
     rawDir = os.path.join(imgDir, "raw")
     alignedDir = os.path.join(imgDir, "aligned")
     mkdirP(alignedDir)
-    featuresDir = os.path.join(imgDir, "features")
+    featuresDir = os.path.join(modelsDir, "features")
     mkdirP(featuresDir)
     labelsPath = os.path.join(featuresDir, "labels.csv")
     repsPath = os.path.join(featuresDir, "reps.csv")
     labels = open(labelsPath, "a+")
     representations = open(repsPath, "a+")
 
-    model = os.path.join(fileDir, "..", "models", "nn4.small2.v1.t7")
+    model = os.path.join(modelsDir, "nn4.small2.v1.t7")
     net = openface.TorchNeuralNet(model = model, imgDim = config.ALIGNED_IMG_SIZE, cuda = True)
 
     dirStack = []
@@ -165,24 +168,24 @@ def main():
                 elif(not config.GPU):
                     faceLocationsArray = getFaceLocationsArray(resizedImages)
                 if(faceLocationsArray is not None):
-                    for faceLocations in faceLocationsArray:
+                    for (alignedFaces, faceLocations) in zip(alignImages(images, faceLocationsArray), faceLocationsArray):
                         numFaces += len(faceLocations)
-                    for image in alignImages(images, faceLocationsArray):
-                        labels.write(image.clss + "\n")
-                        representations.write(rep.getRepString(image.imgMat, net) + "\n")
-                        writeImage(image, alignedDir)
+                        for alignedFace in alignedFaces:
+                            labels.write(alignedFace.clss + "\n")
+                            representations.write(rep.getRepString(alignedFace.imgMat, net) + "\n")
+                            writeImage(alignedFace, alignedDir)
                     images = []
                     resizedImages = []
         # Finish aligning remaining images for this class if GPU enabled
         if(config.GPU and len(images) > 0):
             # GPU batch processing
             faceLocationsArray = getFaceLocationsArray(resizedImages)
-            for faceLocations in faceLocationsArray:
+            for (alignedFaces, faceLocations) in zip(alignImages(images, faceLocationsArray), faceLocationsArray):
                 numFaces += len(faceLocations)
-            for image in alignImages(images, faceLocationsArray):
-                labels.write(image.clss + "\n")
-                representations.write(rep.getRepString(image.imgMat, net) + "\n")
-                writeImage(image, alignedDir)
+                for alignedFace in alignedFaces:
+                    labels.write(alignedFace.clss + "\n")
+                    representations.write(rep.getRepString(alignedFace.imgMat, net) + "\n")
+                    writeImage(alignedFace, alignedDir)
             images = []
             resizedImages = []
 

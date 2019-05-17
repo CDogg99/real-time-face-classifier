@@ -1,6 +1,7 @@
 import pickle
 import os
 import pandas as pd
+import numpy as np
 
 from operator import itemgetter
 
@@ -28,8 +29,13 @@ def train(labelsPath, repsPath, outDir):
     with open(os.path.join(outDir, "classifier.pkl"), 'w') as f:
         pickle.dump((le, clf), f)
 
-# Work in progress
-def infer(image, classifier):
-    image = [image]
-    faceLocationsArray = align.getFaceLocationsArray(image)
-    alignedImage = align.alignImages(image, faceLocationsArray)
+def infer(reps, labelEncoder, classifier):
+    results = []
+    for rep in reps:
+        repValues = rep[1].reshape(1, -1)
+        predictions = classifier.predict_proba(repValues).ravel()
+        maxI = np.argmax(predictions)
+        person = labelEncoder.inverse_transform(maxI)
+        confidence = predictions[maxI]
+        results.append((person.decode("utf-8"), confidence))
+    return results

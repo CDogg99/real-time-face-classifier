@@ -55,6 +55,8 @@ TPL_MIN, TPL_MAX = np.min(TEMPLATE, axis=0), np.max(TEMPLATE, axis=0)
 MINMAX_TEMPLATE = (TEMPLATE - TPL_MIN) / (TPL_MAX - TPL_MIN)
 
 # For video display
+CAMERA_WIDTH = 1280
+CAMERA_HEIGHT = 720
 PROCESS_NTH_FRAME = 5
-# Doesn't change the accuracy of the detection - only the replay speed
+# Doesn't change the accuracy of the detection (only the replay speed)
 TARGET_FRAMERATE = 30
