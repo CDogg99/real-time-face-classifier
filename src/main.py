@@ -38,6 +38,7 @@ def main(args):
     numFrames = 0
     numFaces = 0
     faceLocations = []
+    predictions = []
     while(cap.isOpened() or args.video is not None):
         ret, frame = cap.read()
         if(not ret):
@@ -55,13 +56,17 @@ def main(args):
             for (person, confidence) in predictions:
                 print("Guessed " + person + " with " + str(confidence) + " confidence")
             toWait = 1
-        for (top, right, bottom, left) in faceLocations:
+        for (top, right, bottom, left), (person, confidence) in zip(faceLocations, predictions):
             numFaces += 1
             top *= int(config.DOWNSCALE)
             right *= int(config.DOWNSCALE)
             bottom *= int(config.DOWNSCALE)
             left *= int(config.DOWNSCALE)
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), 2)
+            font = cv2.FONT_HERSHEY_COMPLEX
+            cv2.putText(frame, person, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+
 
         cv2.imshow("video", frame)
         if(cv2.waitKey(toWait) & 0xFF == ord("q")):
