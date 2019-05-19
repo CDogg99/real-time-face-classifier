@@ -61,3 +61,8 @@ CAMERA_HEIGHT = 720
 PROCESS_NTH_FRAME = 5
 # Doesn't change the accuracy of the detection (only the replay speed)
 TARGET_FRAMERATE = 30
+
+# Number of unique frames a person must be classified as unknown in order
+# for reps to be saved and the classifier to be retrained
+RETRAIN_REQUIREMENT = 5
+NUM_REPS_TO_SAVE = 30

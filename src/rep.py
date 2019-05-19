@@ -17,6 +17,9 @@ def getRepString(image, net):
     if(image is None):
         raise Exception("No image given")
     rep = net.forward(image)
+    return getRepStringFromRep(rep)
+
+def getRepStringFromRep(rep):
     output = ""
     i = 0
     while(i < len(rep) - 1):
