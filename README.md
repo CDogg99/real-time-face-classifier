@@ -1,4 +1,4 @@
-# Facial/Vocal Feature Associator
+# Real-Time Face Classifier
 ## CS 309 Final Project
 ### Team D members:
 * Cameron Doggett
